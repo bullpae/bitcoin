@@ -32,13 +32,13 @@ import re
 from tests_config import *
 
 #If imported values are not defined then set to zero (or disabled)
-if not vars().has_key('ENABLE_WALLET'):
+if 'ENABLE_WALLET' not in vars():
     ENABLE_WALLET=0
-if not vars().has_key('ENABLE_BITCOIND'):
+if 'ENABLE_BITCOIND' not in vars():
     ENABLE_BITCOIND=0
-if not vars().has_key('ENABLE_UTILS'):
+if 'ENABLE_UTILS' not in vars():
     ENABLE_UTILS=0
-if not vars().has_key('ENABLE_ZMQ'):
+if 'ENABLE_ZMQ' not in vars():
     ENABLE_ZMQ=0
     
 # python-zmq may not be installed. Handle this gracefully and with some helpful info
@@ -83,6 +83,7 @@ if EXEEXT == ".exe" and "-win" not in opts:
 
 #Tests
 testScripts = [
+    'bip68-112-113-p2p.py',
     'wallet.py',
     'listtransactions.py',
     'receivedby.py',
@@ -116,8 +117,10 @@ testScripts = [
     'invalidtxrequest.py',
     'abandonconflict.py',
     'p2p-versionbits-warning.py',
+    'importprunedfunds.py',
 ]
 testScriptsExt = [
+    'bip9-softforks.py',
     'bip65-cltv.py',
     'bip65-cltv-p2p.py',
     'bip68-sequence.py',

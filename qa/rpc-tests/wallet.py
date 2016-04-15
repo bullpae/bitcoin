@@ -245,28 +245,36 @@ class WalletTest (BitcoinTestFramework):
         txObj = self.nodes[0].gettransaction(txId)
         assert_equal(txObj['amount'], Decimal('-0.0001'))
 
-        #this should fail
-        errorString = ""
         try:
             txId  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), "1f-4")
-        except JSONRPCException,e:
-            errorString = e.error['message']
+        except JSONRPCException as e:
+            assert("Invalid amount" in e.error['message'])
+        else:
+            raise AssertionError("Must not parse invalid amounts")
 
-        assert("Invalid amount" in errorString)
 
-        errorString = ""
         try:
-            self.nodes[0].generate("2") #use a string to as block amount parameter must fail because it's not interpreted as amount
-        except JSONRPCException,e:
-            errorString = e.error['message']
+            self.nodes[0].generate("2")
+            raise AssertionError("Must not accept strings as numeric")
+        except JSONRPCException as e:
+            assert("not an integer" in e.error['message'])
 
-        assert("not an integer" in errorString)
+
+        # Mine a block from node0 to an address from node1
+        cbAddr = self.nodes[1].getnewaddress()
+        blkHash = self.nodes[0].generatetoaddress(1, cbAddr)[0]
+        cbTxId = self.nodes[0].getblock(blkHash)['tx'][0]
+        self.sync_all()
+
+        # Check that the txid and balance is found by node1
+        self.nodes[1].gettransaction(cbTxId)
 
         #check if wallet or blochchain maintenance changes the balance
         self.sync_all()
         blocks = self.nodes[0].generate(2)
         self.sync_all()
         balance_nodes = [self.nodes[i].getbalance() for i in range(3)]
+        block_count = self.nodes[0].getblockcount()
 
         maintenance = [
             '-rescan',
@@ -280,6 +288,9 @@ class WalletTest (BitcoinTestFramework):
             stop_nodes(self.nodes)
             wait_bitcoinds()
             self.nodes = start_nodes(3, self.options.tmpdir, [[m]] * 3)
+            while m == '-reindex' and [block_count] * 3 != [self.nodes[i].getblockcount() for i in range(3)]:
+                # reindex will leave rpc warm up "early"; Wait for it to finish
+                time.sleep(0.1)
             assert_equal(balance_nodes, [self.nodes[i].getbalance() for i in range(3)])
 
         # Exercise listsinceblock with the last two blocks
